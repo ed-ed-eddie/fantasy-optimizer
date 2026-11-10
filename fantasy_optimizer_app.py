@@ -4,13 +4,40 @@ import sys
 import json
 from pathlib import Path
 
-# Add the skill scripts to path
-sys.path.insert(0, str(Path(__file__).parent / "espn-fantasy" / "scripts"))
+# Robust path handling for local + Streamlit Cloud
+def add_helpers_to_path():
+    possible_paths = [
+        Path(__file__).parent / "espn-fantasy" / "scripts",
+        Path(__file__).parent / "scripts",
+        Path.cwd() / "espn-fantasy" / "scripts",
+        Path.cwd() / "scripts",
+    ]
+    for p in possible_paths:
+        if p.exists() and (p / "espn_helpers.py").exists():
+            sys.path.insert(0, str(p))
+            return True
+    return False
+
+if not add_helpers_to_path():
+    st.error("""
+    **Could not find espn_helpers.py**
+    
+    Make sure your GitHub repo has this structure:
+    ```
+    your-repo/
+    ├── fantasy_optimizer_app.py
+    ├── requirements.txt
+    └── espn-fantasy/
+        └── scripts/
+            └── espn_helpers.py
+    ```
+    """)
+    st.stop()
 
 try:
     import espn_helpers
-except ImportError:
-    st.error("Could not import espn_helpers. Make sure the espn-fantasy skill is in the correct location.")
+except ImportError as e:
+    st.error(f"Import failed even after finding the file: {e}")
     st.stop()
 
 # Page config
